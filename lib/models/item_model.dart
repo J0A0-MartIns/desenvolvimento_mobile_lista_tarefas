@@ -4,6 +4,7 @@ class ItemModel {
   String description;
   bool isCompleted;
   DateTime? dueDate;
+  String ownerEmail;
 
   ItemModel({
     required this.id,
@@ -11,6 +12,7 @@ class ItemModel {
     this.description = '',
     this.isCompleted = false,
     this.dueDate,
+    required this.ownerEmail,
   });
 
   ItemModel copyWith({
@@ -19,6 +21,7 @@ class ItemModel {
     String? description,
     bool? isCompleted,
     DateTime? dueDate,
+    String? ownerEmail,
   }) {
     return ItemModel(
       id: id ?? this.id,
@@ -26,6 +29,7 @@ class ItemModel {
       description: description ?? this.description,
       isCompleted: isCompleted ?? this.isCompleted,
       dueDate: dueDate ?? this.dueDate,
+      ownerEmail: ownerEmail ?? this.ownerEmail,
     );
   }
 }

@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Credenciais padrões para agilizar os testes
+    // Credenciais fixas
     _emailController.text = 'admin@teste.com';
     _passwordController.text = '123456';
   }
@@ -38,16 +38,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submit() async {
     final auth = context.read<AuthProvider>();
+    final isRegistering = auth.mode == AuthMode.register;
+    
     auth.validateForm();
     if (_formKey.currentState!.validate()) {
-      bool success = await auth.submit(_emailController.text, _passwordController.text);
+      bool success = await auth.submit(_emailController.text.trim(), _passwordController.text);
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sucesso! Redirecionando...')),
-        );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainListScreen()),
-        );
+        if (isRegistering) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Conta criada! Por favor, faça login.')),
+          );
+          auth.toggleMode(); // Troca para a tela de entrar
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login com sucesso! Redirecionando...')),
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainListScreen()),
+          );
+        }
       }
     }
   }
@@ -120,21 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                  ],
-                  if (!isRegister) ...[
-                    SizedBox(height: AppSpacing.small.value),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: isLoading ? null : () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Funcionalidade ainda não implementada.')),
-                          );
-                        },
-                        child: const Text('Esqueci minha senha?'),
-                      ),
-                    ),
-                  ],
+                  ],                  
                   SizedBox(height: AppSpacing.large.value),
                   PrimaryButton(
                     text: isRegister ? 'Criar conta' : 'Entrar',
@@ -148,8 +143,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text(isRegister ? 'Já tem conta?' : 'Não tem conta?'),
                       TextButton(
                         onPressed: isLoading ? null : () {
-                          // Note: Se for pra Cadastro talvez queira limpar os campos
-                          // Mas para o Mock funcionar rápido mantive os dados setados na refatoração
                           context.read<AuthProvider>().toggleMode();
                         },
                         child: Text(isRegister ? 'Faça login' : 'Cadastre-se'),

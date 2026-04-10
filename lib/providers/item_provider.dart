@@ -5,14 +5,18 @@ import 'dart:math';
 class ItemProvider extends ChangeNotifier {
   final List<ItemModel> _items = [];
 
-  List<ItemModel> get items => List.unmodifiable(_items);
+  // Pega apenas as tarefas logadas pro usuario ativo no momento
+  List<ItemModel> getItemsForUser(String email) {
+    return _items.where((item) => item.ownerEmail == email).toList();
+  }
 
-  void addItem(String title, String description, {DateTime? dueDate}) {
+  void addItem(String title, String description, String ownerEmail, {DateTime? dueDate}) {
     final newItem = ItemModel(
       id: Random().nextInt(10000).toString(),
       title: title,
       description: description,
       dueDate: dueDate,
+      ownerEmail: ownerEmail,
     );
     _items.add(newItem);
     notifyListeners();

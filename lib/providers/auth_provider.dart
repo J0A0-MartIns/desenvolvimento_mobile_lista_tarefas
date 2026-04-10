@@ -7,10 +7,16 @@ class AuthProvider extends ChangeNotifier {
   AuthState _state = AuthState.idle;
   AuthMode _mode = AuthMode.login;
   String? _errorMessage;
+  String? _currentUserEmail;
+
+  final Map<String, String> _registeredAccounts = {
+    'admin@teste.com': '123456' 
+  };
 
   AuthState get state => _state;
   AuthMode get mode => _mode;
   String? get errorMessage => _errorMessage;
+  String? get currentUserEmail => _currentUserEmail;
 
   void toggleMode() {
     _mode = _mode == AuthMode.login ? AuthMode.register : AuthMode.login;
@@ -31,26 +37,33 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    // Simulate network delay
     await Future.delayed(const Duration(seconds: 2));
 
-    // Basic mock authentication
     if (_mode == AuthMode.login) {
-      if (email == 'admin@teste.com' && password == '123456') {
+      if (_registeredAccounts.containsKey(email) && _registeredAccounts[email] == password) {
         _state = AuthState.success;
+        _currentUserEmail = email;
         notifyListeners();
         return true;
       } else {
         _state = AuthState.error;
-        _errorMessage = 'Credenciais inválidas.';
+        _errorMessage = 'Credenciais inválidas ou conta inexistente.';
         notifyListeners();
         return false;
       }
     } else {
-      // Mock register
-      _state = AuthState.success;
-      notifyListeners();
-      return true;
+      if (_registeredAccounts.containsKey(email)) {
+        _state = AuthState.error;
+        _errorMessage = 'Esse e-mail já existe no sistema.';
+        notifyListeners();
+        return false;
+      } else {
+        _registeredAccounts[email] = password; 
+        _state = AuthState.success;
+        // Não loga automaticamente no cadastro, continua nulo!
+        notifyListeners();
+        return true;
+      }
     }
   }
 
@@ -58,6 +71,7 @@ class AuthProvider extends ChangeNotifier {
     _state = AuthState.idle;
     _mode = AuthMode.login;
     _errorMessage = null;
+    _currentUserEmail = null;
     notifyListeners();
   }
 }

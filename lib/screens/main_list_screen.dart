@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/item_provider.dart';
 import '../providers/auth_provider.dart';
 import '../enums/app_spacing.dart';
+import '../widgets/app_drawer.dart';
 import 'item_form_screen.dart';
-import 'login_screen.dart';
 
 class MainListScreen extends StatelessWidget {
   const MainListScreen({super.key});
@@ -43,7 +43,7 @@ class MainListScreen extends StatelessWidget {
     final diff = target.difference(today).inDays;
     
     if (diff == 0) return 'Vence hoje!';
-    if (diff == 1) return 'Vence em 1 dia';
+    if (diff == 1) return 'Vence amanhã';
     if (diff > 1) return 'Vence em $diff dias';
     if (diff == -1) return 'Atrasado 1 dia';
     return 'Atrasado ${-diff} dias';
@@ -51,65 +51,17 @@ class MainListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final provider = context.watch<ItemProvider>();
-    final items = provider.items;
+    
+    // Agora só filtramos as tarefas que cruzam com o email de quem tá acessando
+    final items = provider.getItemsForUser(auth.currentUserEmail ?? '');
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Minhas Tarefas'),
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                color: Color(0xFF6200EA),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Text(
-                    'Painel Inicial',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.small.value),
-                  const Text(
-                    'Bem-vindo admin!',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Início'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.exit_to_app, color: Colors.red),
-              title: const Text('Sair', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                context.read<AuthProvider>().logout();
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: const AppDrawer(), 
       body: items.isEmpty
           ? Center(
               child: Text(

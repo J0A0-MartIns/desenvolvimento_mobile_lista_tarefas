@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/item_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/item_model.dart';
 import '../enums/app_spacing.dart';
 import '../widgets/auth_text_field.dart';
@@ -39,11 +40,15 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
   }
 
   void _save() {
+    // Pega qual conta está logada pra salvar nela
+    final emailLogado = context.read<AuthProvider>().currentUserEmail ?? 'Visitante';
+
     if (_formKey.currentState!.validate()) {
       if (widget.itemToEdit == null) {
         context.read<ItemProvider>().addItem(
               _titleController.text,
               _descController.text,
+              emailLogado,
               dueDate: _dueDate,
             );
         ScaffoldMessenger.of(context).showSnackBar(
