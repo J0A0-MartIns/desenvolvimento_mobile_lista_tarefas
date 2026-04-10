@@ -21,6 +21,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _confirmPasswordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Credenciais padrões para agilizar os testes
+    _emailController.text = 'admin@teste.com';
+    _passwordController.text = '123456';
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -34,7 +42,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       bool success = await auth.submit(_emailController.text, _passwordController.text);
       if (success && mounted) {
-        // Exibir Success SnackBar leve conforme o doc
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sucesso! Redirecionando...')),
         );
@@ -141,10 +148,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text(isRegister ? 'Já tem conta?' : 'Não tem conta?'),
                       TextButton(
                         onPressed: isLoading ? null : () {
-                          // Clear fields when toggling mode
-                          _emailController.clear();
-                          _passwordController.clear();
-                          _confirmPasswordController.clear();
+                          // Note: Se for pra Cadastro talvez queira limpar os campos
+                          // Mas para o Mock funcionar rápido mantive os dados setados na refatoração
                           context.read<AuthProvider>().toggleMode();
                         },
                         child: Text(isRegister ? 'Faça login' : 'Cadastre-se'),

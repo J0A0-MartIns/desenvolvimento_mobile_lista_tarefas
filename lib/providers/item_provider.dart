@@ -7,22 +7,24 @@ class ItemProvider extends ChangeNotifier {
 
   List<ItemModel> get items => List.unmodifiable(_items);
 
-  void addItem(String title, String description) {
+  void addItem(String title, String description, {DateTime? dueDate}) {
     final newItem = ItemModel(
       id: Random().nextInt(10000).toString(),
       title: title,
       description: description,
+      dueDate: dueDate,
     );
     _items.add(newItem);
     notifyListeners();
   }
 
-  void updateItem(String id, String newTitle, String newDescription) {
+  void updateItem(String id, String newTitle, String newDescription, {DateTime? newDueDate}) {
     final index = _items.indexWhere((item) => item.id == id);
     if (index >= 0) {
       _items[index] = _items[index].copyWith(
         title: newTitle,
         description: newDescription,
+        dueDate: newDueDate,
       );
       notifyListeners();
     }

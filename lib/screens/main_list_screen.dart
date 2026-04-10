@@ -35,6 +35,20 @@ class MainListScreen extends StatelessWidget {
     );
   }
 
+  String _formatDueDate(DateTime? date) {
+    if (date == null) return '';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final diff = target.difference(today).inDays;
+    
+    if (diff == 0) return 'Vence hoje!';
+    if (diff == 1) return 'Vence em 1 dia';
+    if (diff > 1) return 'Vence em $diff dias';
+    if (diff == -1) return 'Atrasado 1 dia';
+    return 'Atrasado ${-diff} dias';
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ItemProvider>();
@@ -79,7 +93,6 @@ class MainListScreen extends StatelessWidget {
               leading: const Icon(Icons.home),
               title: const Text('Início'),
               onTap: () {
-                // Apenas fecha o menu, pois já estamos no início
                 Navigator.pop(context);
               },
             ),
@@ -109,6 +122,9 @@ class MainListScreen extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (ctx, i) {
                 final item = items[i];
+                final hasDate = item.dueDate != null;
+                final isOverdue = hasDate && item.dueDate!.isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day));
+
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: AppSpacing.small.value),
                   child: ListTile(
@@ -124,7 +140,26 @@ class MainListScreen extends StatelessWidget {
                         decoration: item.isCompleted ? TextDecoration.lineThrough : null,
                       ),
                     ),
-                    subtitle: item.description.isNotEmpty ? Text(item.description) : null,
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (item.description.isNotEmpty) Text(item.description),
+                        if (hasDate)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              _formatDueDate(item.dueDate),
+                              style: TextStyle(
+                                color: item.isCompleted
+                                    ? Colors.grey
+                                    : (isOverdue ? Colors.red : Colors.green.shade700),
+                                fontWeight: FontWeight.bold,
+                                decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

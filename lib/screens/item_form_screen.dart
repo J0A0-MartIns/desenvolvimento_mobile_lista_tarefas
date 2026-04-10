@@ -19,6 +19,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
+  DateTime? _dueDate;
 
   @override
   void initState() {
@@ -26,6 +27,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     if (widget.itemToEdit != null) {
       _titleController.text = widget.itemToEdit!.title;
       _descController.text = widget.itemToEdit!.description;
+      _dueDate = widget.itemToEdit!.dueDate;
     }
   }
 
@@ -42,6 +44,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
         context.read<ItemProvider>().addItem(
               _titleController.text,
               _descController.text,
+              dueDate: _dueDate,
             );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tarefa incluída!')),
@@ -51,6 +54,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
               widget.itemToEdit!.id,
               _titleController.text,
               _descController.text,
+              newDueDate: _dueDate,
             );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tarefa editada!')),
@@ -89,6 +93,36 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                 hint: 'Detalhes adicionais (opcional)',
                 controller: _descController,
                 validator: (_) => null,
+              ),
+              SizedBox(height: AppSpacing.medium.value),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _dueDate == null
+                          ? 'Sem data'
+                          : 'Data: ${_dueDate!.day.toString().padLeft(2, '0')}/${_dueDate!.month.toString().padLeft(2, '0')}/${_dueDate!.year}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.calendar_today),
+                    label: const Text('Calendário'),
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _dueDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _dueDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                ],
               ),
               SizedBox(height: AppSpacing.large.value),
               PrimaryButton(
