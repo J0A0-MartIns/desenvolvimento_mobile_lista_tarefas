@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/item_provider.dart';
-import '../providers/auth_provider.dart';
 import '../enums/app_spacing.dart';
 import '../widgets/app_drawer.dart';
 import 'item_form_screen.dart';
 
-class MainListScreen extends StatelessWidget {
+class MainListScreen extends StatefulWidget {
   const MainListScreen({super.key});
+
+  @override
+  State<MainListScreen> createState() => _MainListScreenState();
+}
+
+class _MainListScreenState extends State<MainListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => context.read<ItemProvider>().fetchItems());
+  }
 
   void _confirmDelete(BuildContext context, String id) {
     showDialog(
@@ -51,90 +61,89 @@ class MainListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
     final provider = context.watch<ItemProvider>();
-    
-    // Agora só filtramos as tarefas que cruzam com o email de quem tá acessando
-    final items = provider.getItemsForUser(auth.currentUserEmail ?? '');
+    final items = provider.items;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Minhas Tarefas'),
       ),
       drawer: const AppDrawer(), 
-      body: items.isEmpty
-          ? Center(
-              child: Text(
-                'Nenhuma tarefa! Adicione uma nova.',
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-              ),
-            )
-          : ListView.builder(
-              padding: EdgeInsets.all(AppSpacing.small.value),
-              itemCount: items.length,
-              itemBuilder: (ctx, i) {
-                final item = items[i];
-                final hasDate = item.dueDate != null;
-                final isOverdue = hasDate && item.dueDate!.isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day));
+      body: provider.isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : items.isEmpty
+              ? Center(
+                  child: Text(
+                    'Nenhuma tarefa! Adicione uma nova.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.all(AppSpacing.small.value),
+                  itemCount: items.length,
+                  itemBuilder: (ctx, i) {
+                    final item = items[i];
+                    final hasDate = item.dueDate != null;
+                    final isOverdue = hasDate && item.dueDate!.isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day));
 
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: AppSpacing.small.value),
-                  child: ListTile(
-                    leading: Checkbox(
-                      value: item.isCompleted,
-                      onChanged: (_) {
-                        context.read<ItemProvider>().toggleItemCompletion(item.id);
-                      },
-                    ),
-                    title: Text(
-                      item.title,
-                      style: TextStyle(
-                        decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (item.description.isNotEmpty) Text(item.description),
-                        if (hasDate)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              _formatDueDate(item.dueDate),
-                              style: TextStyle(
-                                color: item.isCompleted
-                                    ? Colors.grey
-                                    : (isOverdue ? Colors.red : Colors.green.shade700),
-                                fontWeight: FontWeight.bold,
-                                decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ItemFormScreen(itemToEdit: item),
-                              ),
-                            );
+                    return Card(
+                      margin: EdgeInsets.symmetric(vertical: AppSpacing.small.value),
+                      child: ListTile(
+                        leading: Checkbox(
+                          value: item.isCompleted,
+                          onChanged: (_) {
+                            context.read<ItemProvider>().toggleItemCompletion(item.id);
                           },
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDelete(context, item.id),
+                        title: Text(
+                          item.title,
+                          style: TextStyle(
+                            decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (item.description.isNotEmpty) Text(item.description),
+                            if (hasDate)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Text(
+                                  _formatDueDate(item.dueDate),
+                                  style: TextStyle(
+                                    color: item.isCompleted
+                                        ? Colors.grey
+                                        : (isOverdue ? Colors.red : Colors.green.shade700),
+                                    fontWeight: FontWeight.bold,
+                                    decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => ItemFormScreen(itemToEdit: item),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDelete(context, item.id),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.of(context).push(

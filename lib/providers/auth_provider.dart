@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../api_constants.dart';
 
 enum AuthState { idle, validating, loading, error, success }
 enum AuthMode { login, register }
@@ -8,15 +12,26 @@ class AuthProvider extends ChangeNotifier {
   AuthMode _mode = AuthMode.login;
   String? _errorMessage;
   String? _currentUserEmail;
-
-  final Map<String, String> _registeredAccounts = {
-    'admin@teste.com': '123456' 
-  };
+  String? _token;
 
   AuthState get state => _state;
   AuthMode get mode => _mode;
   String? get errorMessage => _errorMessage;
   String? get currentUserEmail => _currentUserEmail;
+  String? get token => _token;
+
+  AuthProvider() {
+    _loadSession();
+  }
+
+  Future<void> _loadSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey('token') && prefs.containsKey('email')) {
+      _token = prefs.getString('token');
+      _currentUserEmail = prefs.getString('email');
+      notifyListeners();
+    }
+  }
 
   void toggleMode() {
     _mode = _mode == AuthMode.login ? AuthMode.register : AuthMode.login;
@@ -37,41 +52,83 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      if (_mode == AuthMode.login) {
+        final response = await http.post(
+          Uri.parse('${ApiConstants.baseUrl}/auth/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email, 'password': password}),
+        );
 
-    if (_mode == AuthMode.login) {
-      if (_registeredAccounts.containsKey(email) && _registeredAccounts[email] == password) {
-        _state = AuthState.success;
-        _currentUserEmail = email;
-        notifyListeners();
-        return true;
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = jsonDecode(response.body);
+          _token = data['access_token'];
+          _currentUserEmail = data['user']['email'];
+          
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', _token!);
+          await prefs.setString('email', _currentUserEmail!);
+          
+          _state = AuthState.success;
+          notifyListeners();
+          return true;
+        } else {
+          _state = AuthState.error;
+          _errorMessage = 'Credenciais inválidas.';
+          notifyListeners();
+          return false;
+        }
       } else {
-        _state = AuthState.error;
-        _errorMessage = 'Credenciais inválidas ou conta inexistente.';
-        notifyListeners();
-        return false;
+        // A API exige o campo 'name', como a UI não tem esse campo, vamos usar a primeira parte do email
+        final name = email.split('@').first;
+        final response = await http.post(
+          Uri.parse('${ApiConstants.baseUrl}/users'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'name': name,
+            'email': email,
+            'password': password,
+          }),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          _state = AuthState.success;
+          notifyListeners();
+          return true;
+        } else if (response.statusCode == 409) {
+          _state = AuthState.error;
+          _errorMessage = 'Esse e-mail já existe no sistema.';
+          notifyListeners();
+          return false;
+        } else {
+          final errorData = jsonDecode(response.body);
+          _state = AuthState.error;
+          _errorMessage = errorData['message'] is List 
+              ? errorData['message'][0] 
+              : errorData['message'];
+          notifyListeners();
+          return false;
+        }
       }
-    } else {
-      if (_registeredAccounts.containsKey(email)) {
-        _state = AuthState.error;
-        _errorMessage = 'Esse e-mail já existe no sistema.';
-        notifyListeners();
-        return false;
-      } else {
-        _registeredAccounts[email] = password; 
-        _state = AuthState.success;
-        // Não loga automaticamente no cadastro, continua nulo!
-        notifyListeners();
-        return true;
-      }
+    } catch (e) {
+      _state = AuthState.error;
+      _errorMessage = 'Erro de conexão com o servidor.';
+      notifyListeners();
+      return false;
     }
   }
 
-  void logout() {
+  Future<void> logout() async {
     _state = AuthState.idle;
     _mode = AuthMode.login;
     _errorMessage = null;
     _currentUserEmail = null;
+    _token = null;
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('email');
+    
     notifyListeners();
   }
 }

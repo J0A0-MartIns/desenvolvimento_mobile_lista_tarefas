@@ -4,7 +4,6 @@ class ItemModel {
   String description;
   bool isCompleted;
   DateTime? dueDate;
-  String ownerEmail;
 
   ItemModel({
     required this.id,
@@ -12,7 +11,6 @@ class ItemModel {
     this.description = '',
     this.isCompleted = false,
     this.dueDate,
-    required this.ownerEmail,
   });
 
   ItemModel copyWith({
@@ -21,7 +19,6 @@ class ItemModel {
     String? description,
     bool? isCompleted,
     DateTime? dueDate,
-    String? ownerEmail,
   }) {
     return ItemModel(
       id: id ?? this.id,
@@ -29,7 +26,25 @@ class ItemModel {
       description: description ?? this.description,
       isCompleted: isCompleted ?? this.isCompleted,
       dueDate: dueDate ?? this.dueDate,
-      ownerEmail: ownerEmail ?? this.ownerEmail,
     );
+  }
+
+  factory ItemModel.fromJson(Map<String, dynamic> json) {
+    return ItemModel(
+      id: json['id'].toString(),
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      isCompleted: json['isCompleted'] ?? false,
+      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'description': description,
+      'isCompleted': isCompleted,
+      'dueDate': dueDate?.toIso8601String(),
+    };
   }
 }
