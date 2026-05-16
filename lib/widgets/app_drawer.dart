@@ -11,16 +11,15 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Recuperar o email logado
-    final loggedEmail = context.watch<AuthProvider>().currentUserEmail ?? 'Visitante';
+    final loggedEmail =
+        context.watch<AuthProvider>().currentUserEmail ?? 'Visitante';
 
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Color(0xFF6200EA),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFF6200EA)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -36,10 +35,7 @@ class AppDrawer extends StatelessWidget {
                 SizedBox(height: AppSpacing.small.value),
                 Text(
                   'Bem-vindo, $loggedEmail',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -55,7 +51,10 @@ class AppDrawer extends StatelessWidget {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.exit_to_app, color: Colors.red),
-            title: const Text('Sair da Conta', style: TextStyle(color: Colors.red)),
+            title: const Text(
+              'Sair da Conta',
+              style: TextStyle(color: Colors.red),
+            ),
             onTap: () {
               context.read<AuthProvider>().logout();
               Navigator.of(context).pushReplacement(

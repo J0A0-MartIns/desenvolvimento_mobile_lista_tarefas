@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api_constants.dart';
 
 enum AuthState { idle, validating, loading, error, success }
+
 enum AuthMode { login, register }
 
 class AuthProvider extends ChangeNotifier {
@@ -13,12 +14,14 @@ class AuthProvider extends ChangeNotifier {
   String? _errorMessage;
   String? _currentUserEmail;
   String? _token;
+  String? _refreshToken;
 
   AuthState get state => _state;
   AuthMode get mode => _mode;
   String? get errorMessage => _errorMessage;
   String? get currentUserEmail => _currentUserEmail;
   String? get token => _token;
+  String? get refreshToken => _refreshToken;
 
   AuthProvider() {
     _loadSession();
@@ -28,6 +31,7 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey('token') && prefs.containsKey('email')) {
       _token = prefs.getString('token');
+      _refreshToken = prefs.getString('refresh_token');
       _currentUserEmail = prefs.getString('email');
       notifyListeners();
     }
@@ -63,12 +67,16 @@ class AuthProvider extends ChangeNotifier {
         if (response.statusCode == 200 || response.statusCode == 201) {
           final data = jsonDecode(response.body);
           _token = data['access_token'];
+          _refreshToken = data['refresh_token'];
           _currentUserEmail = data['user']['email'];
-          
+
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', _token!);
+          if (_refreshToken != null) {
+            await prefs.setString('refresh_token', _refreshToken!);
+          }
           await prefs.setString('email', _currentUserEmail!);
-          
+
           _state = AuthState.success;
           notifyListeners();
           return true;
@@ -103,8 +111,8 @@ class AuthProvider extends ChangeNotifier {
         } else {
           final errorData = jsonDecode(response.body);
           _state = AuthState.error;
-          _errorMessage = errorData['message'] is List 
-              ? errorData['message'][0] 
+          _errorMessage = errorData['message'] is List
+              ? errorData['message'][0]
               : errorData['message'];
           notifyListeners();
           return false;
@@ -124,11 +132,13 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     _currentUserEmail = null;
     _token = null;
-    
+    _refreshToken = null;
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    await prefs.remove('refresh_token');
     await prefs.remove('email');
-    
+
     notifyListeners();
   }
 }

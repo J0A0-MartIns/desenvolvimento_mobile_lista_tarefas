@@ -47,15 +47,15 @@ class _AuthTextFieldState extends State<AuthTextField> {
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
         suffixIcon: widget.isPassword
             ? GestureDetector(
                 onTap: _toggleVisibility,
                 child: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
-                  semanticLabel: _obscureText ? 'Mostrar senha' : 'Ocultar senha',
+                  semanticLabel: _obscureText
+                      ? 'Mostrar senha'
+                      : 'Ocultar senha',
                 ),
               )
             : null,

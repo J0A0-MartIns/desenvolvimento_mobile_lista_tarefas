@@ -4,6 +4,7 @@ class ItemModel {
   String description;
   bool isCompleted;
   DateTime? dueDate;
+  String? category;
 
   ItemModel({
     required this.id,
@@ -11,6 +12,7 @@ class ItemModel {
     this.description = '',
     this.isCompleted = false,
     this.dueDate,
+    this.category,
   });
 
   ItemModel copyWith({
@@ -19,6 +21,7 @@ class ItemModel {
     String? description,
     bool? isCompleted,
     DateTime? dueDate,
+    String? category,
   }) {
     return ItemModel(
       id: id ?? this.id,
@@ -26,6 +29,7 @@ class ItemModel {
       description: description ?? this.description,
       isCompleted: isCompleted ?? this.isCompleted,
       dueDate: dueDate ?? this.dueDate,
+      category: category ?? this.category,
     );
   }
 
@@ -36,6 +40,7 @@ class ItemModel {
       description: json['description'] ?? '',
       isCompleted: json['isCompleted'] ?? false,
       dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+      category: json['category'],
     );
   }
 
@@ -45,6 +50,7 @@ class ItemModel {
       'description': description,
       'isCompleted': isCompleted,
       'dueDate': dueDate?.toIso8601String(),
+      if (category != null) 'category': category,
     };
   }
 }

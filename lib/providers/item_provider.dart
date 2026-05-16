@@ -17,20 +17,72 @@ class ItemProvider extends ChangeNotifier {
     return prefs.getString('token');
   }
 
+  Future<bool> _refreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final refreshToken = prefs.getString('refresh_token');
+
+    if (refreshToken == null) return false;
+
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh_token': refreshToken}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final newAccessToken = data['access_token'];
+        final newRefreshToken = data['refresh_token'];
+
+        await prefs.setString('token', newAccessToken);
+        if (newRefreshToken != null) {
+          await prefs.setString('refresh_token', newRefreshToken);
+        }
+        return true;
+      }
+    } catch (e) {
+      print('Erro ao atualizar token: $e');
+    }
+
+    // Se falhar o refresh, remove os tokens
+    await prefs.remove('token');
+    await prefs.remove('refresh_token');
+    return false;
+  }
+
+  Future<http.Response> _makeAuthenticatedRequest(
+    Future<http.Response> Function(String token) requestFunc,
+  ) async {
+    var token = await _getToken();
+    if (token == null) return http.Response('Unauthorized', 401);
+
+    var response = await requestFunc(token);
+
+    if (response.statusCode == 401) {
+      final refreshed = await _refreshToken();
+      if (refreshed) {
+        token = await _getToken();
+        response = await requestFunc(token!);
+      }
+    }
+
+    return response;
+  }
+
   Future<void> fetchItems() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final token = await _getToken();
-      if (token == null) return;
-
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/tasks'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _makeAuthenticatedRequest(
+        (token) => http.get(
+          Uri.parse('${ApiConstants.baseUrl}/tasks'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -45,25 +97,30 @@ class ItemProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addItem(String title, String description, {DateTime? dueDate}) async {
+  Future<void> addItem(
+    String title,
+    String description, {
+    DateTime? dueDate,
+    String? category,
+  }) async {
     try {
-      final token = await _getToken();
-      if (token == null) return;
-
       final newItem = ItemModel(
         id: '', // Será substituído pelo ID da API
         title: title,
         description: description,
         dueDate: dueDate,
+        category: category,
       );
 
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/tasks'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(newItem.toJson()),
+      final response = await _makeAuthenticatedRequest(
+        (token) => http.post(
+          Uri.parse('${ApiConstants.baseUrl}/tasks'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(newItem.toJson()),
+        ),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -76,22 +133,28 @@ class ItemProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateItem(String id, String newTitle, String newDescription, {DateTime? newDueDate}) async {
+  Future<void> updateItem(
+    String id,
+    String newTitle,
+    String newDescription, {
+    DateTime? newDueDate,
+    String? newCategory,
+  }) async {
     try {
-      final token = await _getToken();
-      if (token == null) return;
-
-      final response = await http.patch(
-        Uri.parse('${ApiConstants.baseUrl}/tasks/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'title': newTitle,
-          'description': newDescription,
-          'dueDate': newDueDate?.toIso8601String(),
-        }),
+      final response = await _makeAuthenticatedRequest(
+        (token) => http.patch(
+          Uri.parse('${ApiConstants.baseUrl}/tasks/$id'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'title': newTitle,
+            'description': newDescription,
+            'dueDate': newDueDate?.toIso8601String(),
+            if (newCategory != null) 'category': newCategory,
+          }),
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -110,14 +173,11 @@ class ItemProvider extends ChangeNotifier {
 
   Future<void> removeItem(String id) async {
     try {
-      final token = await _getToken();
-      if (token == null) return;
-
-      final response = await http.delete(
-        Uri.parse('${ApiConstants.baseUrl}/tasks/$id'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _makeAuthenticatedRequest(
+        (token) => http.delete(
+          Uri.parse('${ApiConstants.baseUrl}/tasks/$id'),
+          headers: {'Authorization': 'Bearer $token'},
+        ),
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
@@ -141,18 +201,15 @@ class ItemProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await _getToken();
-      if (token == null) return;
-
-      final response = await http.patch(
-        Uri.parse('${ApiConstants.baseUrl}/tasks/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'isCompleted': newStatus,
-        }),
+      final response = await _makeAuthenticatedRequest(
+        (token) => http.patch(
+          Uri.parse('${ApiConstants.baseUrl}/tasks/$id'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({'isCompleted': newStatus}),
+        ),
       );
 
       if (response.statusCode != 200) {

@@ -27,11 +27,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6200EA),           
+          seedColor: const Color(0xFF6200EA),
           brightness: Brightness.light,
         ),
         useMaterial3: true,
-        fontFamily: 'Roboto', 
+        fontFamily: 'Roboto',
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,

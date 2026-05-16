@@ -10,25 +10,21 @@ class AuthHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = mode == AuthMode.login ? 'Bem-vindo(a)!' : 'Crie sua conta';
-    final subtitle = mode == AuthMode.login ? 'Faça login para continuar' : 'Preencha seus dados';
+    final subtitle = mode == AuthMode.login
+        ? 'Faça login para continuar'
+        : 'Preencha seus dados';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: AppSpacing.small.value),
         Text(
           subtitle,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-          ),
+          style: const TextStyle(fontSize: 16, color: Colors.grey),
         ),
       ],
     );

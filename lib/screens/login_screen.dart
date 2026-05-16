@@ -39,19 +39,26 @@ class _LoginScreenState extends State<LoginScreen> {
   void _submit() async {
     final auth = context.read<AuthProvider>();
     final isRegistering = auth.mode == AuthMode.register;
-    
+
     auth.validateForm();
     if (_formKey.currentState!.validate()) {
-      bool success = await auth.submit(_emailController.text.trim(), _passwordController.text);
+      bool success = await auth.submit(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
       if (success && mounted) {
         if (isRegistering) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Conta criada! Por favor, faça login.')),
+            const SnackBar(
+              content: Text('Conta criada! Por favor, faça login.'),
+            ),
           );
           auth.toggleMode(); // Troca para a tela de entrar
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login com sucesso! Redirecionando...')),
+            const SnackBar(
+              content: Text('Login com sucesso! Redirecionando...'),
+            ),
           );
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const MainListScreen()),
@@ -96,9 +103,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     enabled: !isLoading,
                     validator: (val) {
-                      if (val == null || val.isEmpty) return 'Campo obrigatório';
-                      final regex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
-                      if (!regex.hasMatch(val)) return 'E-mail inválido. Faltando @ ou .';
+                      if (val == null || val.isEmpty)
+                        return 'Campo obrigatório';
+                      final regex = RegExp(
+                        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+                      );
+                      if (!regex.hasMatch(val))
+                        return 'E-mail inválido. Faltando @ ou .';
                       return null;
                     },
                   ),
@@ -110,7 +121,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     isPassword: true,
                     enabled: !isLoading,
                     validator: (val) {
-                      if (val == null || val.isEmpty) return 'Campo obrigatório';
+                      if (val == null || val.isEmpty)
+                        return 'Campo obrigatório';
                       if (val.length < 6) return 'Mínimo de 6 caracteres';
                       return null;
                     },
@@ -124,12 +136,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       isPassword: true,
                       enabled: !isLoading,
                       validator: (val) {
-                        if (val == null || val.isEmpty) return 'Campo obrigatório';
-                        if (val != _passwordController.text) return 'As senhas não conferem';
+                        if (val == null || val.isEmpty)
+                          return 'Campo obrigatório';
+                        if (val != _passwordController.text)
+                          return 'As senhas não conferem';
                         return null;
                       },
                     ),
-                  ],                  
+                  ],
                   SizedBox(height: AppSpacing.large.value),
                   PrimaryButton(
                     text: isRegister ? 'Criar conta' : 'Entrar',
@@ -142,9 +156,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(isRegister ? 'Já tem conta?' : 'Não tem conta?'),
                       TextButton(
-                        onPressed: isLoading ? null : () {
-                          context.read<AuthProvider>().toggleMode();
-                        },
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                context.read<AuthProvider>().toggleMode();
+                              },
                         child: Text(isRegister ? 'Faça login' : 'Cadastre-se'),
                       ),
                     ],

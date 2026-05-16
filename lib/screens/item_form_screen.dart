@@ -21,6 +21,17 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   DateTime? _dueDate;
+  String? _category;
+
+  final List<String> _categories = [
+    'Trabalho',
+    'Pessoal',
+    'Estudo',
+    'Saúde',
+    'Finanças',
+    'Casa',
+    'Outros',
+  ];
 
   @override
   void initState() {
@@ -29,6 +40,9 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
       _titleController.text = widget.itemToEdit!.title;
       _descController.text = widget.itemToEdit!.description;
       _dueDate = widget.itemToEdit!.dueDate;
+      if (_categories.contains(widget.itemToEdit!.category)) {
+        _category = widget.itemToEdit!.category;
+      }
     }
   }
 
@@ -43,23 +57,25 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     if (_formKey.currentState!.validate()) {
       if (widget.itemToEdit == null) {
         context.read<ItemProvider>().addItem(
-              _titleController.text,
-              _descController.text,
-              dueDate: _dueDate,
-            );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tarefa incluída!')),
+          _titleController.text,
+          _descController.text,
+          dueDate: _dueDate,
+          category: _category,
         );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Tarefa incluída!')));
       } else {
         context.read<ItemProvider>().updateItem(
-              widget.itemToEdit!.id,
-              _titleController.text,
-              _descController.text,
-              newDueDate: _dueDate,
-            );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tarefa editada!')),
+          widget.itemToEdit!.id,
+          _titleController.text,
+          _descController.text,
+          newDueDate: _dueDate,
+          newCategory: _category,
         );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Tarefa editada!')));
       }
       Navigator.of(context).pop();
     }
@@ -70,9 +86,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     final isEditing = widget.itemToEdit != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Editar Tarefa' : 'Nova Tarefa'),
-      ),
+      appBar: AppBar(title: Text(isEditing ? 'Editar Tarefa' : 'Nova Tarefa')),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(AppSpacing.medium.value),
         child: Form(
@@ -84,7 +98,8 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                 hint: 'Insira o título (obrigatório)',
                 controller: _titleController,
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Título é obrigatório';
+                  if (val == null || val.trim().isEmpty)
+                    return 'Título é obrigatório';
                   return null;
                 },
               ),
@@ -94,6 +109,37 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                 hint: 'Detalhes adicionais (opcional)',
                 controller: _descController,
                 validator: (_) => null,
+              ),
+              SizedBox(height: AppSpacing.medium.value),
+              DropdownButtonFormField<String>(
+                value: _category,
+                decoration: InputDecoration(
+                  labelText: 'Categoria',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                items: _categories.map((String category) {
+                  return DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _category = newValue;
+                  });
+                },
+                validator: (val) {
+                  if (val == null || val.isEmpty) {
+                    return 'Categoria é obrigatória';
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: AppSpacing.medium.value),
               Row(
@@ -126,10 +172,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                 ],
               ),
               SizedBox(height: AppSpacing.large.value),
-              PrimaryButton(
-                text: 'Salvar',
-                onPressed: _save,
-              ),
+              PrimaryButton(text: 'Salvar', onPressed: _save),
             ],
           ),
         ),
