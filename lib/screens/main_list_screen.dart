@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/item_provider.dart';
 import '../enums/app_spacing.dart';
-import '../widgets/app_drawer.dart';
 import 'item_form_screen.dart';
 
 class MainListScreen extends StatefulWidget {
@@ -65,8 +64,6 @@ class _MainListScreenState extends State<MainListScreen> {
     final items = provider.items;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Minhas Tarefas')),
-      drawer: const AppDrawer(),
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : items.isEmpty

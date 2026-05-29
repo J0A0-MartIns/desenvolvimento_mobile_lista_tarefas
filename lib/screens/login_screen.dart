@@ -5,7 +5,7 @@ import '../enums/app_spacing.dart';
 import '../widgets/auth_header.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/primary_button.dart';
-import 'main_list_screen.dart';
+import 'home_wrapper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const MainListScreen()),
+            MaterialPageRoute(builder: (_) => const HomeWrapper()),
           );
         }
       }
