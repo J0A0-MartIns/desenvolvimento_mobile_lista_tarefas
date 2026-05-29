@@ -4,6 +4,8 @@ import '../providers/auth_provider.dart';
 import '../enums/app_spacing.dart';
 import '../screens/login_screen.dart';
 import '../screens/main_list_screen.dart';
+import '../screens/ai_assistant_screen.dart';
+import '../screens/statistics_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -44,8 +46,29 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.task),
             title: const Text('Painel de Atividades'),
             onTap: () {
-              // Já estamos no painel de atividades como raiz, então pop
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const MainListScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.psychology, color: Color(0xFF6200EA)),
+            title: const Text('Assistente de IA'),
+            onTap: () {
               Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.bar_chart, color: Colors.blue),
+            title: const Text('Estatísticas'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+              );
             },
           ),
           const Divider(),
