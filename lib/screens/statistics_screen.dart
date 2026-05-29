@@ -4,7 +4,6 @@ import '../providers/item_provider.dart';
 import '../providers/ai_provider.dart';
 import '../models/item_model.dart';
 import '../enums/app_spacing.dart';
-import '../widgets/app_drawer.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -94,10 +93,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final String completionPercentage = (completionRate * 100).toStringAsFixed(0);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Estatísticas e Métricas'),
-      ),
-      drawer: const AppDrawer(),
       body: itemProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
