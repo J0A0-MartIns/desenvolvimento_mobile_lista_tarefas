@@ -12,6 +12,15 @@ class ItemProvider extends ChangeNotifier {
   List<ItemModel> get items => _items;
   bool get isLoading => _isLoading;
 
+  String _parseErrorMessage(dynamic errorData) {
+    if (errorData == null) return 'Erro desconhecido';
+    final message = errorData['message'];
+    if (message is List) {
+      return message.join(', ');
+    }
+    return message?.toString() ?? 'Erro desconhecido';
+  }
+
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
@@ -88,9 +97,13 @@ class ItemProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         _items = data.map((json) => ItemModel.fromJson(json)).toList();
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(_parseErrorMessage(errorData));
       }
     } catch (e) {
       print('Erro ao carregar tarefas: $e');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -127,9 +140,13 @@ class ItemProvider extends ChangeNotifier {
         final data = jsonDecode(response.body);
         _items.add(ItemModel.fromJson(data));
         notifyListeners();
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(_parseErrorMessage(errorData));
       }
     } catch (e) {
       print('Erro ao adicionar tarefa: $e');
+      rethrow;
     }
   }
 
@@ -151,7 +168,7 @@ class ItemProvider extends ChangeNotifier {
           body: jsonEncode({
             'title': newTitle,
             'description': newDescription,
-            'dueDate': newDueDate?.toIso8601String(),
+            if (newDueDate != null) 'dueDate': newDueDate.toIso8601String(),
             if (newCategory != null) 'category': newCategory,
           }),
         ),
@@ -165,9 +182,13 @@ class ItemProvider extends ChangeNotifier {
           _items[index] = updatedItem;
           notifyListeners();
         }
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(_parseErrorMessage(errorData));
       }
     } catch (e) {
       print('Erro ao atualizar tarefa: $e');
+      rethrow;
     }
   }
 
@@ -183,9 +204,13 @@ class ItemProvider extends ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 204) {
         _items.removeWhere((item) => item.id == id);
         notifyListeners();
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(_parseErrorMessage(errorData));
       }
     } catch (e) {
       print('Erro ao remover tarefa: $e');
+      rethrow;
     }
   }
 
@@ -216,12 +241,15 @@ class ItemProvider extends ChangeNotifier {
         // Reverte se falhou
         _items[index] = currentItem;
         notifyListeners();
+        final errorData = jsonDecode(response.body);
+        throw Exception(_parseErrorMessage(errorData));
       }
     } catch (e) {
       // Reverte se falhou
       _items[index] = currentItem;
       notifyListeners();
       print('Erro ao completar tarefa: $e');
+      rethrow;
     }
   }
 }

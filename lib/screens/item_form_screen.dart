@@ -53,31 +53,55 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     super.dispose();
   }
 
-  void _save() {
+  void _save() async {
     if (_formKey.currentState!.validate()) {
-      if (widget.itemToEdit == null) {
-        context.read<ItemProvider>().addItem(
-          _titleController.text,
-          _descController.text,
-          dueDate: _dueDate,
-          category: _category,
+      if (_dueDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Por favor, selecione uma data de vencimento.'),
+            backgroundColor: Colors.red,
+          ),
         );
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Tarefa incluída!')));
-      } else {
-        context.read<ItemProvider>().updateItem(
-          widget.itemToEdit!.id,
-          _titleController.text,
-          _descController.text,
-          newDueDate: _dueDate,
-          newCategory: _category,
-        );
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Tarefa editada!')));
+        return;
       }
-      Navigator.of(context).pop();
+      try {
+        if (widget.itemToEdit == null) {
+          await context.read<ItemProvider>().addItem(
+            _titleController.text,
+            _descController.text,
+            dueDate: _dueDate,
+            category: _category,
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Tarefa incluída!')));
+          }
+        } else {
+          await context.read<ItemProvider>().updateItem(
+            widget.itemToEdit!.id,
+            _titleController.text,
+            _descController.text,
+            newDueDate: _dueDate,
+            newCategory: _category,
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Tarefa editada!')));
+          }
+        }
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          final errorMsg = e.toString().replaceFirst('Exception: ', '');
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+        }
+      }
     }
   }
 
@@ -106,9 +130,13 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
               SizedBox(height: AppSpacing.medium.value),
               AuthTextField(
                 label: 'Descrição',
-                hint: 'Detalhes adicionais (opcional)',
+                hint: 'Insira a descrição (obrigatória)',
                 controller: _descController,
-                validator: (_) => null,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty)
+                    return 'Descrição é obrigatória';
+                  return null;
+                },
               ),
               SizedBox(height: AppSpacing.medium.value),
               DropdownButtonFormField<String>(

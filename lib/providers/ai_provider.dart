@@ -159,11 +159,19 @@ Instruções:
 
         // Executa a ação do CRUD
         if (action == 'create' && taskData != null) {
-          final String title = taskData['title'] ?? 'Nova tarefa sem título';
-          final String description = taskData['description'] ?? '';
-          DateTime? dueDate;
-          if (taskData['dueDate'] != null) {
-            dueDate = DateTime.tryParse(taskData['dueDate']);
+          // Trunca o título para no máximo 100 caracteres (limite do backend)
+          final String rawTitle = (taskData['title'] ?? 'Nova tarefa sem título').toString();
+          final String title = rawTitle.length > 100 ? rawTitle.substring(0, 100) : rawTitle;
+          // Backend exige description não vazia — usa padrão se ausente
+          final String description =
+              (taskData['description'] != null && taskData['description'].toString().trim().isNotEmpty)
+                  ? taskData['description'].toString()
+                  : 'Sem descrição';
+          // Backend exige dueDate em ISO UTC — usa hoje + 7 dias se ausente
+          DateTime dueDate = DateTime.now().toUtc().add(const Duration(days: 7));
+          if (taskData['dueDate'] != null && taskData['dueDate'].toString().isNotEmpty) {
+            final parsed = DateTime.tryParse(taskData['dueDate'].toString());
+            if (parsed != null) dueDate = parsed.toUtc();
           }
           final String category = taskData['category'] ?? 'Outros';
 

@@ -15,7 +15,18 @@ class _MainListScreenState extends State<MainListScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<ItemProvider>().fetchItems());
+    Future.microtask(() async {
+      try {
+        await context.read<ItemProvider>().fetchItems();
+      } catch (e) {
+        if (mounted) {
+          final errorMsg = e.toString().replaceFirst('Exception: ', '');
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+        }
+      }
+    });
   }
 
   void _confirmDelete(BuildContext context, String id) {
@@ -30,12 +41,23 @@ class _MainListScreenState extends State<MainListScreen> {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
-              context.read<ItemProvider>().removeItem(id);
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Tarefa excluída.')));
+              try {
+                await context.read<ItemProvider>().removeItem(id);
+                if (mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Tarefa excluída.')));
+                }
+              } catch (e) {
+                if (mounted) {
+                  final errorMsg = e.toString().replaceFirst('Exception: ', '');
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+                }
+              }
             },
             child: const Text('Excluir', style: TextStyle(color: Colors.red)),
           ),
@@ -96,10 +118,19 @@ class _MainListScreenState extends State<MainListScreen> {
                   child: ListTile(
                     leading: Checkbox(
                       value: item.isCompleted,
-                      onChanged: (_) {
-                        context.read<ItemProvider>().toggleItemCompletion(
-                          item.id,
-                        );
+                      onChanged: (_) async {
+                        try {
+                          await context.read<ItemProvider>().toggleItemCompletion(
+                            item.id,
+                          );
+                        } catch (e) {
+                          if (mounted) {
+                            final errorMsg = e.toString().replaceFirst('Exception: ', '');
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+                          }
+                        }
                       },
                     ),
                     title: Text(

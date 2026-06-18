@@ -21,6 +21,123 @@ class _HomeWrapperState extends State<HomeWrapper> {
     StatisticsScreen(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAiInsights();
+    });
+  }
+
+  void _checkAiInsights() {
+    final auth = context.read<AuthProvider>();
+    final insights = auth.aiInsights;
+    if (insights != null && _isValidInsights(insights)) {
+      _showInsightsModal(insights);
+      auth.clearAiInsights();
+    }
+  }
+
+  bool _isValidInsights(Map<String, dynamic> insights) {
+    final delayedTasks = insights['delayed_tasks'] as List<dynamic>?;
+    final priorityTask = insights['priority_task'] as String?;
+    final suggestion = insights['suggestion'] as String?;
+
+    bool hasDelayed = delayedTasks != null && delayedTasks.isNotEmpty;
+    bool hasPriority = priorityTask != null && priorityTask.toString().isNotEmpty;
+    bool hasSuggestion = suggestion != null && suggestion.toString().isNotEmpty;
+
+    return hasDelayed || hasPriority || hasSuggestion;
+  }
+
+  void _showInsightsModal(Map<String, dynamic> insights) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final delayedTasks = insights['delayed_tasks'] as List<dynamic>? ?? [];
+        final priorityTask = insights['priority_task']?.toString() ?? '';
+        final suggestion = insights['suggestion']?.toString() ?? '';
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.psychology, color: Colors.purple),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('Sugestão do Dia')),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (suggestion.isNotEmpty) ...[
+                  const Text(
+                    'Sugestão',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(suggestion, style: TextStyle(color: Colors.grey.shade800)),
+                  const SizedBox(height: 16),
+                ],
+                if (priorityTask.isNotEmpty) ...[
+                  const Text(
+                    'Tarefa Prioritária',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.orange, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(priorityTask, style: TextStyle(color: Colors.grey.shade800)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (delayedTasks.isNotEmpty) ...[
+                  const Text(
+                    'Tarefas Atrasadas',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+                  ),
+                  const SizedBox(height: 4),
+                  ...delayedTasks.map((task) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('• ', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                        Expanded(child: Text(task.toString(), style: TextStyle(color: Colors.grey.shade800))),
+                      ],
+                    ),
+                  )).toList(),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Entendi'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _openAiModal() {
     showModalBottomSheet(
       context: context,

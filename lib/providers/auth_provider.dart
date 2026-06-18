@@ -15,6 +15,7 @@ class AuthProvider extends ChangeNotifier {
   String? _currentUserEmail;
   String? _token;
   String? _refreshToken;
+  Map<String, dynamic>? _aiInsights;
 
   AuthState get state => _state;
   AuthMode get mode => _mode;
@@ -22,6 +23,12 @@ class AuthProvider extends ChangeNotifier {
   String? get currentUserEmail => _currentUserEmail;
   String? get token => _token;
   String? get refreshToken => _refreshToken;
+  Map<String, dynamic>? get aiInsights => _aiInsights;
+
+  void clearAiInsights() {
+    _aiInsights = null;
+    notifyListeners();
+  }
 
   AuthProvider() {
     _loadSession();
@@ -69,6 +76,7 @@ class AuthProvider extends ChangeNotifier {
           _token = data['access_token'];
           _refreshToken = data['refresh_token'];
           _currentUserEmail = data['user']['email'];
+          _aiInsights = data['ai_insights'];
 
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', _token!);
@@ -133,6 +141,7 @@ class AuthProvider extends ChangeNotifier {
     _currentUserEmail = null;
     _token = null;
     _refreshToken = null;
+    _aiInsights = null;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');

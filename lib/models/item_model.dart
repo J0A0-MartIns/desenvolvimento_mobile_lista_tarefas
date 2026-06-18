@@ -49,7 +49,7 @@ class ItemModel {
       'title': title,
       'description': description,
       'isCompleted': isCompleted,
-      'dueDate': dueDate?.toIso8601String(),
+      'dueDate': dueDate?.toUtc().toIso8601String(),
       if (category != null) 'category': category,
     };
   }
