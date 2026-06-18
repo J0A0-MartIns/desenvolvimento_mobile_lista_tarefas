@@ -12,6 +12,19 @@ class MainListScreen extends StatefulWidget {
 }
 
 class _MainListScreenState extends State<MainListScreen> {
+  String? _selectedCategory; // null means 'Todas'
+
+  final List<String> _filterCategories = [
+    'Todas',
+    'Trabalho',
+    'Pessoal',
+    'Estudo',
+    'Saúde',
+    'Finanças',
+    'Casa',
+    'Outros',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -58,130 +71,212 @@ class _MainListScreenState extends State<MainListScreen> {
     return 'Atrasado ${-diff} dias';
   }
 
+  Color _getCategoryColor(String? category) {
+    switch (category) {
+      case 'Trabalho':
+        return Colors.orange.shade100;
+      case 'Pessoal':
+        return Colors.purple.shade100;
+      case 'Estudo':
+        return Colors.green.shade100;
+      case 'Saúde':
+        return Colors.red.shade100;
+      case 'Finanças':
+        return Colors.amber.shade100;
+      case 'Casa':
+        return Colors.brown.shade100;
+      default:
+        return Colors.grey.shade200;
+    }
+  }
+
+  Color _getCategoryTextColor(String? category) {
+    switch (category) {
+      case 'Trabalho':
+        return Colors.orange.shade900;
+      case 'Pessoal':
+        return Colors.purple.shade900;
+      case 'Estudo':
+        return Colors.green.shade900;
+      case 'Saúde':
+        return Colors.red.shade900;
+      case 'Finanças':
+        return Colors.amber.shade900;
+      case 'Casa':
+        return Colors.brown.shade900;
+      default:
+        return Colors.grey.shade800;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ItemProvider>();
-    final items = provider.items;
+    final allItems = provider.items;
+    final items = _selectedCategory == null
+        ? allItems
+        : allItems.where((item) => item.category == _selectedCategory).toList();
 
     return Scaffold(
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : items.isEmpty
-          ? Center(
-              child: Text(
-                'Nenhuma tarefa! Adicione uma nova.',
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-              ),
-            )
-          : ListView.builder(
-              padding: EdgeInsets.all(AppSpacing.small.value),
-              itemCount: items.length,
-              itemBuilder: (ctx, i) {
-                final item = items[i];
-                final hasDate = item.dueDate != null;
-                final isOverdue =
-                    hasDate &&
-                    item.dueDate!.isBefore(
-                      DateTime(
-                        DateTime.now().year,
-                        DateTime.now().month,
-                        DateTime.now().day,
-                      ),
-                    );
-
-                return Card(
-                  margin: EdgeInsets.symmetric(
-                    vertical: AppSpacing.small.value,
-                  ),
-                  child: ListTile(
-                    leading: Checkbox(
-                      value: item.isCompleted,
-                      onChanged: (_) {
-                        context.read<ItemProvider>().toggleItemCompletion(
-                          item.id,
+          : Column(
+              children: [
+                if (allItems.isNotEmpty)
+                  Container(
+                    height: 50,
+                    margin: const EdgeInsets.only(top: 8),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: _filterCategories.length,
+                      itemBuilder: (ctx, idx) {
+                        final cat = _filterCategories[idx];
+                        final isSelected = (_selectedCategory == null && cat == 'Todas') ||
+                            _selectedCategory == cat;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: ChoiceChip(
+                            label: Text(cat),
+                            selected: isSelected,
+                            selectedColor: Colors.blue.shade100,
+                            onSelected: (selected) {
+                              setState(() {
+                                _selectedCategory = cat == 'Todas' ? null : cat;
+                              });
+                            },
+                          ),
                         );
                       },
                     ),
-                    title: Text(
-                      item.title,
-                      style: TextStyle(
-                        decoration: item.isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (item.category != null && item.category!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade100,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                item.category!,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue.shade900,
-                                  fontWeight: FontWeight.w600,
-                                  decoration: item.isCompleted
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (item.description.isNotEmpty) Text(item.description),
-                        if (hasDate)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              _formatDueDate(item.dueDate),
-                              style: TextStyle(
-                                color: item.isCompleted
-                                    ? Colors.grey
-                                    : (isOverdue
-                                          ? Colors.red
-                                          : Colors.green.shade700),
-                                fontWeight: FontWeight.bold,
-                                decoration: item.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ItemFormScreen(itemToEdit: item),
-                              ),
-                            );
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDelete(context, item.id),
-                        ),
-                      ],
-                    ),
                   ),
-                );
-              },
+                Expanded(
+                  child: allItems.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Nenhuma tarefa! Adicione uma nova.',
+                            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                          ),
+                        )
+                      : items.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Nenhuma tarefa na categoria "$_selectedCategory"!',
+                                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.all(AppSpacing.small.value),
+                              itemCount: items.length,
+                              itemBuilder: (ctx, i) {
+                                final item = items[i];
+                                final hasDate = item.dueDate != null;
+                                final isOverdue =
+                                    hasDate &&
+                                    item.dueDate!.isBefore(
+                                      DateTime(
+                                        DateTime.now().year,
+                                        DateTime.now().month,
+                                        DateTime.now().day,
+                                      ),
+                                    );
+
+                                return Card(
+                                  margin: EdgeInsets.symmetric(
+                                    vertical: AppSpacing.small.value,
+                                  ),
+                                  child: ListTile(
+                                    leading: Checkbox(
+                                      value: item.isCompleted,
+                                      onChanged: (_) {
+                                        context.read<ItemProvider>().toggleItemCompletion(
+                                          item.id,
+                                        );
+                                      },
+                                    ),
+                                    title: Text(
+                                      item.title,
+                                      style: TextStyle(
+                                        decoration: item.isCompleted
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (item.category != null && item.category!.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _getCategoryColor(item.category),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                item.category!,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: _getCategoryTextColor(item.category),
+                                                  fontWeight: FontWeight.w600,
+                                                  decoration: item.isCompleted
+                                                      ? TextDecoration.lineThrough
+                                                      : null,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        if (item.description.isNotEmpty) Text(item.description),
+                                        if (hasDate)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4.0),
+                                            child: Text(
+                                              _formatDueDate(item.dueDate),
+                                              style: TextStyle(
+                                                color: item.isCompleted
+                                                    ? Colors.grey
+                                                    : (isOverdue
+                                                          ? Colors.red
+                                                          : Colors.green.shade700),
+                                                fontWeight: FontWeight.bold,
+                                                decoration: item.isCompleted
+                                                    ? TextDecoration.lineThrough
+                                                    : null,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Colors.blue),
+                                          onPressed: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    ItemFormScreen(itemToEdit: item),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => _confirmDelete(context, item.id),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                ),
+              ],
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

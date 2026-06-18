@@ -139,6 +139,7 @@ class ItemProvider extends ChangeNotifier {
     String newDescription, {
     DateTime? newDueDate,
     String? newCategory,
+    bool? newIsCompleted,
   }) async {
     try {
       final response = await _makeAuthenticatedRequest(
@@ -153,6 +154,7 @@ class ItemProvider extends ChangeNotifier {
             'description': newDescription,
             'dueDate': newDueDate?.toIso8601String(),
             if (newCategory != null) 'category': newCategory,
+            if (newIsCompleted != null) 'isCompleted': newIsCompleted,
           }),
         ),
       );
