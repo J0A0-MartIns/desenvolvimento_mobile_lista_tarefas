@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/ai_assistant_modal.dart';
+import '../widgets/ai_insights_modal.dart';
 import 'login_screen.dart';
 import 'main_list_screen.dart';
 import 'statistics_screen.dart';
@@ -20,6 +21,30 @@ class _HomeWrapperState extends State<HomeWrapper> {
     MainListScreen(),
     StatisticsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Exibe o modal de insights da IA após o primeiro frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showAiInsightsIfAvailable();
+    });
+  }
+
+  void _showAiInsightsIfAvailable() {
+    final auth = context.read<AuthProvider>();
+    final insights = auth.aiInsights;
+
+    if (AiInsightsModal.hasValidData(insights) && insights != null) {
+      auth.clearAiInsights();
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black54,
+        builder: (_) => AiInsightsModal(insights: insights),
+      );
+    }
+  }
 
   void _openAiModal() {
     showModalBottomSheet(
